@@ -14,7 +14,8 @@ namespace ReviewSentimentAnalysis
     class Program
     {
         static readonly string _dataPath = Path.Combine(Environment.CurrentDirectory, "Data", "amazon_cells_labelled.txt");
-        static readonly string _modelPath = Path.Combine(Environment.CurrentDirectory, "Data", "Model.zip");
+        static readonly string _modelPath = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.ToString(), "Data", "Model.zip");
+        static DataViewSchema temp;
 
         static void Main(string[] args)
         {
@@ -30,13 +31,19 @@ namespace ReviewSentimentAnalysis
 
             UseModelWithBatchItems(mlContext, model);
 
+            Console.WriteLine(_modelPath);
+
+            using (var fs = new FileStream(_modelPath, FileMode.Create, FileAccess.Write, FileShare.Write))
+                mlContext.Model.Save(model,temp, fs);
 
         }
         public static TrainTestData LoadData(MLContext mlContext)
         {
             IDataView dataView = mlContext.Data.LoadFromTextFile<SentimentData>(_dataPath, hasHeader: false);
+            temp = dataView.Schema;
 
             TrainTestData splitDataView = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.2);
+
 
             return splitDataView;
         }
@@ -74,6 +81,7 @@ namespace ReviewSentimentAnalysis
         {
             PredictionEngine<SentimentData, SentimentPrediction> predictionFunction = mlContext.Model.CreatePredictionEngine<SentimentData, SentimentPrediction>(model);
 
+
             SentimentData sampleStatement = new SentimentData
             {
                 SentimentText = "Worst Phone ever used, do not buy"
@@ -108,6 +116,7 @@ namespace ReviewSentimentAnalysis
             IDataView batchComments = mlContext.Data.LoadFromEnumerable(sentiments);
 
             IDataView predictions = model.Transform(batchComments);
+
 
             // Use model to predict whether comment data is Positive (1) or Negative (0).
             IEnumerable<SentimentPrediction> predictedResults = mlContext.Data.CreateEnumerable<SentimentPrediction>(predictions, reuseRowObject: false);
