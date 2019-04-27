@@ -30,9 +30,7 @@ namespace ReviewSentimentAnalysis
             UseModelWithSingleItem(mlContext, model);
 
             UseModelWithBatchItems(mlContext, model);
-
-            Console.WriteLine(_modelPath);
-
+            
             using (var fs = new FileStream(_modelPath, FileMode.Create, FileAccess.Write, FileShare.Write))
                 mlContext.Model.Save(model,temp, fs);
 
